@@ -1,7 +1,6 @@
 const canvas = document.getElementById('myCanvas');
 const ctx = canvas.getContext('2d');
-const slider = document.getElementById('month-slider');
-const monthLabel = document.getElementById('month-label');
+const rowLabel = document.getElementById('row-info');
 
 const imageWidth = 4096;
 const imageHeight = 2048;
@@ -9,116 +8,88 @@ canvas.width = imageWidth;
 canvas.height = imageHeight;
 
 const backgroundImage = new Image();
-backgroundImage.src = '/data/landmask4K.png'; // Load the background image via the server
+backgroundImage.src = '/data/landmask4K.png';
 
-let allEvents = [];
-const startYear = 2023;
+let allEvents = []; // All event data
+const startYear = 2023; // Start year for CSV data
 
-// Dynamically set slider range based on CSV data
-let minYear = 2023; // Default values, will be updated dynamically
-let maxYear = 2025;
+// --- Animation settings ---
+const animationDurationSeconds = 50; // Total animation time (seconds)
+const frameRate = 30; // ★★★ Change this to 30 ★★★
+const totalAnimationFrames = animationDurationSeconds * frameRate; // Total number of frames
 
-// Map slider to specific year and month from CSV
-let availableDates = [];
+let currentAnimationFrame = 0; // Current animation frame number
+let animationStartTime = null; // Animation start time
 
 // Fetch event data from the server
 async function loadData() {
     const response = await fetch('/api/events');
     const data = await response.json();
-    // Pre-calculate coordinates
+    // Pre-calculate coordinates and sort by date for animation
     allEvents = data.map(event => ({
         ...event,
         x: ((event.lon + 180) / 360) * imageWidth,
         y: ((90 - event.lat) / 180) * imageHeight,
-    }));
-    draw(); // First drawing after loading data
-}
-
-// Initialize slider and load data
-async function initializeSlider() {
-    const response = await fetch('/api/events');
-    const data = await response.json();
-
-    // Extract unique year-month combinations from the data
-    const uniqueDates = new Set(data.map(event => `${event.year},${event.month}`));
-    availableDates = Array.from(uniqueDates).sort((a, b) => {
-        const [yearA, monthA] = a.split(',').map(Number);
-        const [yearB, monthB] = b.split(',').map(Number);
-        return yearA === yearB ? monthA - monthB : yearA - yearB;
+    })).sort((a, b) => {
+        // Sort events by year and month
+        if (a.year !== b.year) return a.year - b.year;
+        return a.month - b.month;
     });
 
-    // Update slider range
-    slider.min = 0;
-    slider.max = availableDates.length - 1;
-    slider.value = 0;
-
-    updateSliderLabel();
+    console.log(`Total events loaded: ${allEvents.length}`);
+    draw(); // Initial drawing after data loading
 }
 
-function updateSliderLabel() {
-    const index = parseInt(slider.value);
-    const [year, month] = availableDates[index].split(',');
-    monthLabel.textContent = `${year}-${month}`;
-}
+// Drawing function
+function draw(timestamp) {
+    if (!animationStartTime) {
+        animationStartTime = timestamp; // Record animation start time
+    }
 
-// Draw function
-function draw() {
-    const index = parseInt(slider.value);
-    const [year, month] = availableDates[index].split(',').map(Number);
+    // Elapsed time (seconds)
+    const elapsedTimeSeconds = (timestamp - animationStartTime) / 1000;
 
-    // Filter events by selected year and month
-    const activeEvents = allEvents.filter(event => 
-        event.year < year || (event.year === year && event.month <= month)
-    );
+    // Animation progress (0.0 to 1.0)
+    let progress = elapsedTimeSeconds / animationDurationSeconds;
+    if (progress > 1) progress = 1; // Clamp to not exceed 1.0
+
+    // Calculate the index of the events to be displayed
+    const eventsToShowCount = Math.floor(allEvents.length * progress);
 
     // Clear the canvas and draw the background image
     ctx.clearRect(0, 0, imageWidth, imageHeight);
     ctx.drawImage(backgroundImage, 0, 0, imageWidth, imageHeight);
 
-    // Draw circles for active events
-    activeEvents.forEach(event => {
+    // Draw the events to be displayed
+    for (let i = 0; i < eventsToShowCount; i++) {
+        const event = allEvents[i];
         ctx.beginPath();
         ctx.arc(event.x, event.y, 15, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(255, 0, 80, 0.7)';
+        ctx.fillStyle = 'rgba(238, 0, 17, 0.7)';
         ctx.fill();
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
-        ctx.lineWidth = 2;
-        ctx.stroke();
-    });
+    }
+
+    updateRowLabel(eventsToShowCount, elapsedTimeSeconds); // Update row label
+
+    // Request the next frame if the animation is not finished
+    if (progress < 1) {
+        requestAnimationFrame(draw);
+    } else {
+        console.log(`Animation finished. Total events: ${eventsToShowCount}`);
+    }
 }
 
-// Event listener
-backgroundImage.onload = loadData; // Start loading data after the background image is loaded
-slider.addEventListener('input', () => {
-    updateSliderLabel();
-    draw();
-});
-
-// Update draw function to filter by selected year and month
-function draw() {
-    const index = parseInt(slider.value);
-    const [year, month] = availableDates[index].split(',').map(Number);
-
-    // Filter events by selected year and month
-    const activeEvents = allEvents.filter(event => 
-        event.year < year || (event.year === year && event.month <= month)
-    );
-
-    // Clear the canvas and draw the background image
-    ctx.clearRect(0, 0, imageWidth, imageHeight);
-    ctx.drawImage(backgroundImage, 0, 0, imageWidth, imageHeight);
-
-    // Draw circles for active events
-    activeEvents.forEach(event => {
-        ctx.beginPath();
-        ctx.arc(event.x, event.y, 15, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(255, 0, 80, 0.7)';
-        ctx.fill();
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
-        ctx.lineWidth = 2;
-        ctx.stroke();
-    });
+// Update row label based on the number of events shown and elapsed time
+function updateRowLabel(eventsShown, elapsedTime) {
+    rowLabel.textContent = `Number of drawing events: ${eventsShown} / ${allEvents.length} | Elapsed time: ${elapsedTime.toFixed(2)} s`;
 }
 
-// Initialize slider and load data
-initializeSlider();
+// Start animation after the background image is loaded
+backgroundImage.onload = () => {
+    loadData().then(() => {
+        // Initial drawing (background image only)
+        ctx.drawImage(backgroundImage, 0, 0, imageWidth, imageHeight);
+        // Start animation
+        requestAnimationFrame(draw);
+    });
+};
