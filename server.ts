@@ -5,7 +5,15 @@ import { parse } from 'csv-parse/sync';
 import { fileURLToPath } from 'url';
 
 // Data type definition (same as main.ts)
-interface EventData { /* ... */ }
+interface EventData {
+  year: number;
+  month: number;
+  locationName: string;
+  countryName: string;
+  lon: number;
+  lat: number;
+  eventType: string;
+}
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -21,6 +29,14 @@ let allEvents: EventData[] = [];
 // Return processed event data as JSON
 app.get('/api/events', (req, res) => {
   res.json(allEvents);
+});
+
+// Add an endpoint to get min and max year from the data
+app.get('/api/years', (req, res) => {
+  const years = allEvents.map(event => event.year);
+  const minYear = Math.min(...years);
+  const maxYear = Math.max(...years);
+  res.json({ minYear, maxYear });
 });
 
 // Serve static files (make public folder accessible from the browser)
