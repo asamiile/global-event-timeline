@@ -1,3 +1,14 @@
-body { margin: 0; font-family: sans-serif; text-align: center; background: #222; color: #eee; }
-canvas { width: 100%; height: auto; }
-#controls { margin-top: 20px; }
+body { 
+    margin: 0; 
+    font-family: sans-serif; 
+    text-align: center; 
+    background: #222; 
+    color: #eee; 
+}
+
+canvas { 
+    width: 100%; 
+    height: auto; 
+    display: block; /* Center canvas */
+    margin: 0 auto;
+}
