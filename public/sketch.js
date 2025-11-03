@@ -54,7 +54,7 @@ function draw(timestamp) {
         const event = allEvents[i];
         ctx.beginPath();
         ctx.arc(event.x, event.y, 15, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(238, 0, 17, 0.7)';
+        ctx.fillStyle = 'rgba(232, 72, 83, 0.7)';
         ctx.fill();
     }
 
