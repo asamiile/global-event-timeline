@@ -9,7 +9,9 @@ pnpm-debug.log*
 
 # build files
 /dist
-/output
+
+# output files
+/output/movie/*.mp4
 
 # macOS
 .DS_Store
