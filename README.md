@@ -2,7 +2,7 @@
 
 A video visualization that maps extreme weather event CSV data onto a world map.
 
-https://github.com/user-attachments/assets/a622e7a7-fe9a-43c3-99ac-6103c1aadb20
+https://github.com/user-attachments/assets/bfe181b1-aa90-4a4b-8dd0-0c5a3d895669
 
 ## Data Source
 
